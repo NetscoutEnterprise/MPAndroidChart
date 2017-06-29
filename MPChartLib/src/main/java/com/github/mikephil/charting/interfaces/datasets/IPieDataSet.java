@@ -66,5 +66,9 @@ public interface IPieDataSet extends IDataSet<PieEntry> {
      * */
     boolean isValueLineVariableLength();
 
+    /**
+     *  Draw values on chart if the percent value is equal to or exceeds this threshold
+     *  */
+    float getDrawValuePercentThreshold();
 }
 
