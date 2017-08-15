@@ -291,6 +291,8 @@ public abstract class DataSet<T extends Entry> extends BaseDataSet<T> {
 
     @Override
     public T getEntryForIndex(int index) {
+        // Avoid an IndexOutOfBoundsException if we try access an item outside out list
+        if (index >= mValues.size()) return null;
         return mValues.get(index);
     }
 
