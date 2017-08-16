@@ -102,6 +102,22 @@ public class Highlight {
     }
 
     /**
+     * Constructor, only used for for Combined Chart.
+     *
+     * @param x            the index of the highlighted value on the x-axis
+     * @param y            the y-value of the highlighted value
+     * @param dataIndex    the index of the highlighted data entry
+     * @param dataSetIndex the index of the DataSet the highlighted value belongs to
+     * @param stackIndex   references which value of a stacked-bar entry has been
+     *                     selected
+     */
+    public Highlight(float x, float y, float xPx, float yPx, int dataIndex, int dataSetIndex, int stackIndex, YAxis.AxisDependency axis) {
+        this(x, y, xPx, yPx, dataSetIndex, axis);
+        this.mStackIndex = stackIndex;
+        this.mDataIndex = dataIndex;
+    }
+
+    /**
      * returns the x-value of the highlighted value
      *
      * @return

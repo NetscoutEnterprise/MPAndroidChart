@@ -116,6 +116,7 @@ public class CombinedChart extends BarLineChartBase<CombinedData> implements Com
             // For isHighlightFullBarEnabled, remove stackIndex
             return new Highlight(h.getX(), h.getY(),
                     h.getXPx(), h.getYPx(),
+                    h.getDataIndex(),
                     h.getDataSetIndex(), -1, h.getAxis());
         }
     }
