@@ -57,7 +57,7 @@ public class LineChartRenderer extends LineRadarRenderer {
     protected Path cubicFillPath = new Path();
 
     // Andromeda Additions
-    private float noDataValue = Float.MIN_VALUE;
+    private float noDataValue = -Float.MAX_VALUE;
     private float noDataTransitionWidth = 0.33f; // As a percent of the normal entry width
     public void setNoDataValue(float noDataValue) {
         this.noDataValue = noDataValue;
