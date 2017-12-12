@@ -57,7 +57,7 @@ public class LineChartRenderer extends LineRadarRenderer {
     protected Path cubicFillPath = new Path();
 
     // Andromeda Additions
-    private float noDataValue = -Float.MAX_VALUE;
+    private float noDataValue = Float.NaN;
     private float noDataTransitionWidth = 0.33f; // As a percent of the normal entry width
     public void setNoDataValue(float noDataValue) {
         this.noDataValue = noDataValue;
@@ -69,7 +69,7 @@ public class LineChartRenderer extends LineRadarRenderer {
         return (isNoDataValue(entry) ? fillMin : entry.getY());
     }
     private boolean isNoDataValue(Entry entry) {
-        return (entry == null || entry.getY() <= noDataValue);
+        return (entry == null || entry.getY() == noDataValue);
     }
 
     public LineChartRenderer(LineDataProvider chart, ChartAnimator animator,
