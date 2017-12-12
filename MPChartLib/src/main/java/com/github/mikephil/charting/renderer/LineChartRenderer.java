@@ -56,6 +56,22 @@ public class LineChartRenderer extends LineRadarRenderer {
     protected Path cubicPath = new Path();
     protected Path cubicFillPath = new Path();
 
+    // Andromeda Additions
+    private float noDataValue = Float.NaN;
+    private float noDataTransitionWidth = 0.33f; // As a percent of the normal entry width
+    public void setNoDataValue(float noDataValue) {
+        this.noDataValue = noDataValue;
+    }
+    public void setNoDataTransitionWidth(float noDataTransitionWidth) {
+        this.noDataTransitionWidth = noDataTransitionWidth;
+    }
+    private float getAdjustedY(Entry entry, float fillMin) {
+        return (isNoDataValue(entry) ? fillMin : entry.getY());
+    }
+    private boolean isNoDataValue(Entry entry) {
+        return (entry == null || entry.getY() == noDataValue);
+    }
+
     public LineChartRenderer(LineDataProvider chart, ChartAnimator animator,
                              ViewPortHandler viewPortHandler) {
         super(animator, viewPortHandler);
@@ -392,24 +408,48 @@ public class LineChartRenderer extends LineRadarRenderer {
 
                     if (e1 == null || e2 == null) continue;
 
+                    if (isNoDataValue(e1) || (!isDrawSteppedEnabled && isNoDataValue(e2))) {
+                        // If the previous sample is valid but the current one is not
+                        if(!isNoDataValue(e1) && isNoDataValue(e2)) {
+                            // Draw a no data transition leaving the previous entry
+                            mLineBuffer[j++] = e1.getX();
+                            mLineBuffer[j++] = e1.getY() * phaseY;
+                            mLineBuffer[j++] = e1.getX() + noDataTransitionWidth;
+                            mLineBuffer[j++] = e1.getY() * phaseY;
+                        }
+                        // If the previous sample was not valid and the current one is valid
+                        else if(isNoDataValue(e1) && !isNoDataValue(e2) && !isDrawSteppedEnabled) {
+                            // Draw a no data transition entering the current entry
+                            mLineBuffer[j++] = e2.getX() - noDataTransitionWidth;
+                            mLineBuffer[j++] = e2.getY() * phaseY;
+                            mLineBuffer[j++] = e2.getX();
+                            mLineBuffer[j++] = e2.getY() * phaseY;
+                        }
+                        continue;
+                    }
+
                     mLineBuffer[j++] = e1.getX();
                     mLineBuffer[j++] = e1.getY() * phaseY;
 
                     if (isDrawSteppedEnabled) {
                         mLineBuffer[j++] = e2.getX();
                         mLineBuffer[j++] = e1.getY() * phaseY;
-                        mLineBuffer[j++] = e2.getX();
-                        mLineBuffer[j++] = e1.getY() * phaseY;
+                        if (!isNoDataValue(e2)) {
+                            mLineBuffer[j++] = e2.getX();
+                            mLineBuffer[j++] = e1.getY() * phaseY;
+                        }
                     }
 
-                    mLineBuffer[j++] = e2.getX();
-                    mLineBuffer[j++] = e2.getY() * phaseY;
+                    if (!isNoDataValue(e2)) {
+                        mLineBuffer[j++] = e2.getX();
+                        mLineBuffer[j++] = e2.getY() * phaseY;
+                    }
                 }
 
                 if (j > 0) {
                     trans.pointValuesToPixel(mLineBuffer);
 
-                    final int size = Math.max((mXBounds.range + 1) * pointsPerEntryPair, pointsPerEntryPair) * 2;
+                    final int size = j; // Math.max((mXBounds.range + 1) * pointsPerEntryPair, pointsPerEntryPair) * 2;
 
                     mRenderPaint.setColor(dataSet.getColor());
 
@@ -491,20 +531,36 @@ public class LineChartRenderer extends LineRadarRenderer {
         final Entry entry = dataSet.getEntryForIndex(startIndex);
 
         filled.moveTo(entry.getX(), fillMin);
-        filled.lineTo(entry.getX(), entry.getY() * phaseY);
+        filled.lineTo(entry.getX(), getAdjustedY(entry, fillMin) * phaseY);
 
         // create a new path
         Entry currentEntry = null;
-        Entry previousEntry = null;
+        Entry previousEntry = entry;
         for (int x = startIndex + 1; x <= endIndex; x++) {
 
             currentEntry = dataSet.getEntryForIndex(x);
 
-            if (isDrawSteppedEnabled && previousEntry != null) {
-                filled.lineTo(currentEntry.getX(), previousEntry.getY() * phaseY);
+            // Changes to show gaps for no data.  Note: The stepped and non-stepped implementations
+            // are similar and could be optimized for code size however That will make each code path
+            // harder to follow.
+            if (isDrawSteppedEnabled) {
+                filled.lineTo(currentEntry.getX(), getAdjustedY(previousEntry, fillMin) * phaseY);
+                filled.lineTo(currentEntry.getX(), getAdjustedY(currentEntry, fillMin) * phaseY);
+            } else {
+                if (isNoDataValue(previousEntry)) {
+                    if (!isNoDataValue(currentEntry)) {
+                        filled.lineTo(currentEntry.getX() - noDataTransitionWidth, getAdjustedY(previousEntry, fillMin) * phaseY);
+                        filled.lineTo(currentEntry.getX() - noDataTransitionWidth, getAdjustedY(currentEntry, fillMin) * phaseY);
+                    }
+                    else {
+                        filled.lineTo(currentEntry.getX(), getAdjustedY(previousEntry, fillMin) * phaseY);
+                    }
+                } else if (isNoDataValue(currentEntry)) {
+                    filled.lineTo(previousEntry.getX() + noDataTransitionWidth, getAdjustedY(previousEntry, fillMin) * phaseY);
+                    filled.lineTo(previousEntry.getX() + noDataTransitionWidth, fillMin * phaseY);
+                }
+                filled.lineTo(currentEntry.getX(), getAdjustedY(currentEntry, fillMin) * phaseY);
             }
-
-            filled.lineTo(currentEntry.getX(), currentEntry.getY() * phaseY);
 
             previousEntry = currentEntry;
         }
